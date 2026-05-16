@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { MeshReflectorMaterial, Float, Environment, Html } from "@react-three/drei";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,12 +28,12 @@ function LakeScene({ memories, onSelectMemory }) {
   // Generate random positions over the water
   const positions = useMemo(() => {
     return memories.map((_, i) => {
-      // Create a nice distribution of memories across the lake
-      const radius = 2 + Math.random() * 8;
+      // Tighter radius so memories are visible on narrow mobile viewports too
+      const radius = 1.5 + Math.random() * 4;
       const angle = (i / memories.length) * Math.PI * 2 + Math.random() * 0.5;
       const x = Math.cos(angle) * radius;
-      const z = Math.sin(angle) * radius - 2; // Offset slightly away from camera
-      const y = 0.5 + Math.random() * 1.5; // Hovering above water
+      const z = Math.sin(angle) * radius - 1.5;
+      const y = 0.5 + Math.random() * 1.2;
       return [x, y, z];
     });
   }, [memories]);
@@ -76,65 +76,95 @@ function LakeScene({ memories, onSelectMemory }) {
 
 export default function MemoryLake({ memories }) {
   const [activeMemory, setActiveMemory] = useState(null);
+  // Detect mobile so we can tune the camera
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   return (
     <div className="w-full h-full relative bg-black">
-      {/* 3D Canvas */}
-      <Canvas camera={{ position: [0, 2, 8], fov: 45 }}>
+      {/* 3D Canvas — touch-action:none lets Three.js receive pointer events on mobile */}
+      <Canvas
+        style={{ touchAction: "none" }}
+        camera={{
+          position: isMobile ? [0, 3, 7] : [0, 2, 8],
+          fov: isMobile ? 65 : 45,
+        }}
+        dpr={[1, 2]}
+      >
         <LakeScene memories={memories} onSelectMemory={setActiveMemory} />
         <Environment preset="night" />
       </Canvas>
+
+      {/* Tap hint for mobile */}
+      {isMobile && !activeMemory && (
+        <p className="absolute bottom-20 left-0 right-0 text-center text-white/30 text-xs tracking-widest pointer-events-none z-20">
+          TAP A LIGHT TO OPEN A MEMORY
+        </p>
+      )}
 
       {/* UI Overlay for Active Memory */}
       <AnimatePresence>
         {activeMemory && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="absolute inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6 bg-black/70 backdrop-blur-sm"
             onClick={() => setActiveMemory(null)}
           >
-            <div 
-              className="relative max-w-2xl w-full bg-white/5 border border-white/10 rounded-3xl p-8 overflow-hidden shadow-[0_0_50px_rgba(255,255,255,0.05)]"
-              onClick={(e) => e.stopPropagation()} // Prevent clicking the card from closing it
+            <div
+              className="relative w-full sm:max-w-2xl bg-[#07111f]/90 border border-white/10 rounded-t-3xl sm:rounded-3xl overflow-y-auto max-h-[85vh] shadow-[0_0_50px_rgba(255,255,255,0.05)]"
+              onClick={(e) => e.stopPropagation()}
             >
-              <button 
+              {/* Drag handle (visual only) */}
+              <div className="flex justify-center pt-3 pb-1 sm:hidden">
+                <div className="w-10 h-1 rounded-full bg-white/20" />
+              </div>
+
+              {/* Close button */}
+              <button
                 onClick={() => setActiveMemory(null)}
-                className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors"
+                className="absolute top-4 right-4 sm:top-6 sm:right-6 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all text-sm z-10"
+                aria-label="Close"
               >
-                Close
+                ✕
               </button>
-              
-              <div className="flex flex-col md:flex-row gap-8 items-center">
-                {activeMemory.imageUrl && (
-                  <div className="w-full md:w-1/2 flex-shrink-0">
-                    {/* Use standard img tag for simplicity, Next/Image could be used if domain is configured */}
-                    <img 
-                      src={activeMemory.imageUrl} 
-                      alt={activeMemory.title} 
-                      className="w-full aspect-[4/5] object-cover rounded-xl border border-white/10"
+
+              <div className="p-5 sm:p-8">
+                {/* Always stack: image on top, text below */}
+                <div className="flex flex-col gap-5">
+                  {activeMemory.imageUrl && (
+                    <img
+                      src={activeMemory.imageUrl}
+                      alt={activeMemory.title}
+                      className="w-full max-h-64 sm:max-h-80 object-cover rounded-2xl border border-white/10"
                     />
-                  </div>
-                )}
-                
-                <div className="flex-1 text-center md:text-left">
-                  <h3 className="font-serif text-3xl md:text-4xl text-white/90 mb-4 font-light">
-                    {activeMemory.title}
-                  </h3>
-                  {activeMemory.description && (
-                    <p className="text-white/60 text-lg leading-relaxed font-light whitespace-pre-wrap">
-                      {activeMemory.description}
-                    </p>
                   )}
+
+                  <div className="text-center">
+                    <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl text-white/90 mb-3 font-light leading-tight">
+                      {activeMemory.title}
+                    </h3>
+                    {activeMemory.description && (
+                      <p className="text-white/60 text-base sm:text-lg leading-relaxed font-light whitespace-pre-wrap">
+                        {activeMemory.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-      
+
       {/* Cinematic Vignette */}
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_transparent_40%,_black_100%)] z-10" />
     </div>
