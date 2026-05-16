@@ -4,9 +4,11 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Entrance from "@/components/Entrance";
 import SkyOfReasons from "@/components/SkyOfReasons";
+import MemoryLake from "@/components/MemoryLake";
 
-export default function MainExperience({ messages }) {
+export default function MainExperience({ messages, memories }) {
   const [hasEntered, setHasEntered] = useState(false);
+  const [currentRealm, setCurrentRealm] = useState("sky"); // 'sky' or 'lake'
 
   return (
     <main className="relative w-full h-screen overflow-hidden bg-black text-white">
@@ -22,13 +24,54 @@ export default function MainExperience({ messages }) {
           </motion.div>
         ) : (
           <motion.div
-            key="universe"
+            key="experience"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 3, delay: 1 }}
             className="absolute inset-0"
           >
-            <SkyOfReasons messages={messages} />
+            <AnimatePresence mode="wait">
+              {currentRealm === "sky" ? (
+                <motion.div
+                  key="sky"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 2 }}
+                  className="absolute inset-0"
+                >
+                  <SkyOfReasons messages={messages} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="lake"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 2 }}
+                  className="absolute inset-0"
+                >
+                  <MemoryLake memories={memories} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
+            {/* Navigation Overlay */}
+            <div className="absolute bottom-10 left-0 right-0 z-40 flex justify-center items-center gap-8">
+              <button 
+                onClick={() => setCurrentRealm("sky")}
+                className={`text-sm tracking-[0.3em] uppercase transition-all duration-700 ${currentRealm === 'sky' ? 'text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]' : 'text-white/30 hover:text-white/60'}`}
+              >
+                The Sky
+              </button>
+              <div className="w-px h-4 bg-white/20"></div>
+              <button 
+                onClick={() => setCurrentRealm("lake")}
+                className={`text-sm tracking-[0.3em] uppercase transition-all duration-700 ${currentRealm === 'lake' ? 'text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]' : 'text-white/30 hover:text-white/60'}`}
+              >
+                The Lake
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

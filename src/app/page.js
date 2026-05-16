@@ -8,6 +8,10 @@ export default async function Home() {
     orderBy: { createdAt: "desc" }
   });
 
-  return <MainExperience messages={messages} />;
+  const memories = await prisma.memory.findMany({
+    orderBy: { createdAt: "desc" }
+  });
+
+  return <MainExperience messages={messages} memories={memories} />;
 }
 
