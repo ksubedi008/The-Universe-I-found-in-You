@@ -20,3 +20,10 @@ model Memory {
   imageUrl    String?
   createdAt   DateTime @default(now())
 }
+
+model Song {
+  id        String   @id @default(uuid())
+  title     String
+  url       String   // publicly accessible URL (e.g. /music/filename.mp3 or a blob URL)
+  createdAt DateTime @default(now())
+}

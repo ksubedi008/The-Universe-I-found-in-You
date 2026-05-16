@@ -5,8 +5,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import Entrance from "@/components/Entrance";
 import SkyOfReasons from "@/components/SkyOfReasons";
 import MemoryLake from "@/components/MemoryLake";
+import MusicPlayer from "@/components/MusicPlayer";
 
-export default function MainExperience({ messages, memories }) {
+export default function MainExperience({ messages, memories, songs }) {
   const [hasEntered, setHasEntered] = useState(false);
   const [currentRealm, setCurrentRealm] = useState("sky"); // 'sky' or 'lake'
 
@@ -75,6 +76,9 @@ export default function MainExperience({ messages, memories }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Music Player — always mounted so audio doesn't reset on realm switch */}
+      {hasEntered && <MusicPlayer songs={songs ?? []} />}
     </main>
   );
 }
