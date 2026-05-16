@@ -1,58 +1,52 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function MusicPlayer({ songs }) {
-  const audioRef = useRef(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+/**
+ * Pure UI controller — receives the shared audioRef from MainExperience.
+ * Play is always started inside the Enter click handler (user gesture) so
+ * browsers never block it.
+ */
+export default function MusicPlayer({ audioRef, playlist, currentIndex, setCurrentIndex, isPlaying, setIsPlaying }) {
   const [showPlayer, setShowPlayer] = useState(true);
-
-  // Shuffle songs once on mount so every visit feels fresh
-  const [playlist] = useState(() => {
-    if (!songs || songs.length === 0) return [];
-    const arr = [...songs];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  });
 
   const currentSong = playlist[currentIndex];
 
-  // Auto-play the first song as soon as the component mounts
+  // When currentIndex changes after the first track, load & play the new track
   useEffect(() => {
-    if (!audioRef.current || playlist.length === 0) return;
-    audioRef.current.src = playlist[0].url;
-    // Browsers require user interaction — attempt play, silently ignore if blocked
-    audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
-  }, [playlist]);
-
-  // When currentIndex changes, load & play the new track
-  useEffect(() => {
-    if (!audioRef.current || !currentSong) return;
-    audioRef.current.src = currentSong.url;
+    if (!audioRef.current || currentIndex === 0) return; // index 0 is handled by MainExperience
+    const song = playlist[currentIndex];
+    if (!song) return;
+    audioRef.current.src = song.url;
     audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
   }, [currentIndex]); // eslint-disable-line
 
-  // Advance to next song (stop after last — no repeat)
+  // When a track ends naturally, advance (or stop at the end — no repeat)
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleEnded = () => {
+      setCurrentIndex((prev) => {
+        if (prev >= playlist.length - 1) {
+          setIsPlaying(false);
+          return prev;
+        }
+        return prev + 1;
+      });
+    };
+
+    audio.addEventListener("ended", handleEnded);
+    return () => audio.removeEventListener("ended", handleEnded);
+  }, [audioRef, playlist.length, setCurrentIndex, setIsPlaying]);
+
   const playNext = useCallback(() => {
     setCurrentIndex((prev) => {
-      if (prev >= playlist.length - 1) return prev; // reached end, stop
+      if (prev >= playlist.length - 1) return prev;
       return prev + 1;
     });
-  }, [playlist.length]);
-
-  // When a track ends, move to the next
-  const handleEnded = useCallback(() => {
-    if (currentIndex < playlist.length - 1) {
-      playNext();
-    } else {
-      setIsPlaying(false);
-    }
-  }, [currentIndex, playlist.length, playNext]);
+  }, [playlist.length, setCurrentIndex]);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -64,14 +58,11 @@ export default function MusicPlayer({ songs }) {
     }
   };
 
-  if (playlist.length === 0) return null;
+  if (!playlist.length) return null;
 
   return (
     <>
-      {/* Hidden audio element */}
-      <audio ref={audioRef} onEnded={handleEnded} preload="auto" />
-
-      {/* Floating Player */}
+      {/* Floating Player pill */}
       <AnimatePresence>
         {showPlayer && (
           <motion.div
@@ -82,11 +73,10 @@ export default function MusicPlayer({ songs }) {
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 px-4 py-2.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl shadow-[0_0_30px_rgba(255,255,255,0.05)]"
           >
             {/* Song title */}
-            <span className="text-white/60 text-xs tracking-widest max-w-[140px] sm:max-w-[200px] truncate">
+            <span className="text-white/60 text-xs tracking-widest max-w-[130px] sm:max-w-[200px] truncate">
               {currentSong?.title ?? "—"}
             </span>
 
-            {/* Divider */}
             <div className="w-px h-4 bg-white/20 flex-shrink-0" />
 
             {/* Play / Pause */}
@@ -96,13 +86,11 @@ export default function MusicPlayer({ songs }) {
               className="w-7 h-7 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-all flex-shrink-0"
             >
               {isPlaying ? (
-                // Pause icon
                 <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current">
                   <rect x="6" y="5" width="4" height="14" rx="1" />
                   <rect x="14" y="5" width="4" height="14" rx="1" />
                 </svg>
               ) : (
-                // Play icon
                 <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current">
                   <polygon points="5,3 19,12 5,21" />
                 </svg>
@@ -116,7 +104,6 @@ export default function MusicPlayer({ songs }) {
               aria-label="Next song"
               className="w-7 h-7 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0"
             >
-              {/* Skip-forward icon */}
               <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current">
                 <polygon points="5,5 15,12 5,19" />
                 <rect x="17" y="5" width="2" height="14" rx="1" />
@@ -139,7 +126,7 @@ export default function MusicPlayer({ songs }) {
         )}
       </AnimatePresence>
 
-      {/* Re-open button when closed */}
+      {/* Re-open button */}
       <AnimatePresence>
         {!showPlayer && (
           <motion.button
