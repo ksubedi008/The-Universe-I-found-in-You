@@ -17,7 +17,11 @@ const beginnings = [
   "Your endless kindness",
   "The light in your eyes",
   "Every whisper from you",
-  "The warmth of your hand"
+  "The warmth of your hand",
+  "Just thinking about the way you",
+  "The incredible way you",
+  "Your radiant smile",
+  "How deeply you"
 ];
 
 const middles = [
@@ -35,7 +39,11 @@ const middles = [
   "sparks a fire deep within my soul",
   "paints my universe with vibrant colors",
   "sings a melody only my heart can hear",
-  "wraps me in infinite comfort"
+  "wraps me in infinite comfort",
+  "fills the silence with joy",
+  "makes time stand perfectly still",
+  "calms the restless waves inside me",
+  "brings me a profound sense of purpose"
 ];
 
 const endings = [
@@ -53,12 +61,16 @@ const endings = [
   "anchoring me when the world spins too fast.",
   "and it's a feeling I want to hold onto for eternity.",
   "like the universe aligning just for us.",
-  "and I fall for you all over again."
+  "and I fall for you all over again.",
+  "like a beautiful dream I never want to wake from.",
+  "making everything else fade away into the background.",
+  "and fills my entire being with warmth.",
+  "reminding me that every heartbreak led me to you."
 ];
 
 // Generate unique combinations
 const reasons = new Set();
-while(reasons.size < 500) {
+while(reasons.size < 1500) {
   const b = beginnings[Math.floor(Math.random() * beginnings.length)];
   const m = middles[Math.floor(Math.random() * middles.length)];
   const e = endings[Math.floor(Math.random() * endings.length)];
@@ -66,7 +78,7 @@ while(reasons.size < 500) {
 }
 
 async function main() {
-  console.log("Seeding 500 poetic reasons...");
+  console.log("Seeding 1500 poetic reasons...");
   
   // Clear existing messages to start fresh (optional, but good for testing)
   await prisma.message.deleteMany();

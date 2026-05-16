@@ -14,11 +14,13 @@ export async function createMessage(formData) {
   });
   
   revalidatePath("/admin-secret-dashboard");
+  revalidatePath("/");
 }
 
 export async function deleteMessage(id) {
   await prisma.message.delete({ where: { id } });
   revalidatePath("/admin-secret-dashboard");
+  revalidatePath("/");
 }
 
 export async function createMemory(formData) {
@@ -46,9 +48,11 @@ export async function createMemory(formData) {
   });
   
   revalidatePath("/admin-secret-dashboard");
+  revalidatePath("/");
 }
 
 export async function deleteMemory(id) {
   await prisma.memory.delete({ where: { id } });
   revalidatePath("/admin-secret-dashboard");
+  revalidatePath("/");
 }
