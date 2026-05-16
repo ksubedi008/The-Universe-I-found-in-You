@@ -169,10 +169,6 @@ export default function SkyOfReasons({ messages }) {
         )}
       </AnimatePresence>
       
-      {/* Helper text */}
-      <div className="absolute bottom-10 left-0 w-full text-center pointer-events-none text-white/30 text-sm tracking-widest font-light">
-        EXPLORE THE STARS
-      </div>
     </div>
   );
 }
