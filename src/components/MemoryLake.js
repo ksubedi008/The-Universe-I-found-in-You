@@ -8,17 +8,22 @@ import * as THREE from "three";
 
 // Individual Memory Node
 function MemoryNode({ memory, position, onClick }) {
-  // Use a soft glowing blue/white color for the memories
-  const color = new THREE.Color().setHSL(0.6, 0.5, 0.8);
-  
+  const color = new THREE.Color().setHSL(0.6, 0.6, 0.85);
+
   return (
     <Float speed={1.5} rotationIntensity={0.2} floatIntensity={1} position={position}>
       <mesh onClick={(e) => { e.stopPropagation(); onClick(memory); }}>
-        <octahedronGeometry args={[0.3, 1]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.8} />
+        {/* Larger gem so it's clearly visible on small screens */}
+        <octahedronGeometry args={[0.45, 1]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={2.5}
+          toneMapped={false}
+        />
       </mesh>
-      {/* Soft light emanating from the memory */}
-      <pointLight distance={3} intensity={0.5} color={color} />
+      {/* Strong glow so the reflection and surrounding area lights up */}
+      <pointLight distance={6} intensity={3} color={color} />
     </Float>
   );
 }
@@ -40,9 +45,10 @@ function LakeScene({ memories, onSelectMemory }) {
 
   return (
     <>
-      <fog attach="fog" args={['#03050a', 5, 20]} />
-      <ambientLight intensity={0.1} />
-      <directionalLight position={[10, 10, 10]} intensity={0.2} color="#4a6ca3" />
+      {/* Push fog much further back so nodes near the camera are always visible */}
+      <fog attach="fog" args={['#03050a', 12, 30]} />
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[5, 8, 5]} intensity={0.6} color="#7ab0ff" />
 
       {/* The Reflective Water */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
@@ -92,8 +98,9 @@ export default function MemoryLake({ memories }) {
       <Canvas
         style={{ touchAction: "none" }}
         camera={{
-          position: isMobile ? [0, 3, 7] : [0, 2, 8],
-          fov: isMobile ? 65 : 45,
+          // On mobile: sit closer and higher so nodes fill the screen
+          position: isMobile ? [0, 4, 5] : [0, 2, 8],
+          fov: isMobile ? 70 : 45,
         }}
         dpr={[1, 2]}
       >
@@ -165,8 +172,10 @@ export default function MemoryLake({ memories }) {
         )}
       </AnimatePresence>
 
-      {/* Cinematic Vignette */}
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_transparent_40%,_black_100%)] z-10" />
+      {/* Cinematic Vignette — lighter on mobile so nodes aren't hidden */}
+      <div className="absolute inset-0 pointer-events-none z-10"
+        style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 55%, transparent 45%, rgba(0,0,0,0.85) 100%)' }}
+      />
     </div>
   );
 }
