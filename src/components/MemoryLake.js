@@ -151,7 +151,7 @@ export default function MemoryLake({ memories }) {
                     <img
                       src={activeMemory.imageUrl}
                       alt={activeMemory.title}
-                      className="w-full max-h-64 sm:max-h-80 object-cover rounded-2xl border border-white/10"
+                      className="w-full object-contain rounded-2xl border border-white/10"
                     />
                   )}
 
